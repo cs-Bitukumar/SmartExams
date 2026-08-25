@@ -1,0 +1,84 @@
+.dashboard { padding: 4rem 0 5rem; }
+
+.dashboard-header,
+.section-heading,
+.result-row,
+.result-row div,
+.exam-card footer {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-header,
+.section-heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  letter-spacing: -0.04em;
+}
+
+.dashboard-subtitle,
+.dashboard-status {
+  color: var(--muted);
+}
+
+.stat-grid,
+.exam-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 2rem;
+}
+
+.stat-card,
+.exam-card,
+.guest-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.stat-card span,
+.exam-subject,
+.result-row span,
+.section-heading span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.stat-card strong {
+  display: block;
+  color: var(--primary);
+  font-size: 2rem;
+  margin-top: 0.5rem;
+}
+
+.dashboard-section { margin-top: 2.5rem; }
+.section-heading h2 { margin: 0; }
+.section-heading a { color: var(--primary); font-weight: 700; }
+.exam-grid { grid-template-columns: repeat(3, 1fr); }
+.exam-card h3 { margin: 0.5rem 0; }
+.exam-card p { color: var(--muted); min-height: 3rem; }
+.exam-card footer { justify-content: space-between; color: var(--muted); font-size: 0.9rem; }
+.results-list { border-top: 1px solid var(--border); }
+.result-row { justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+.result-row div { align-items: flex-start; flex-direction: column; gap: 0.25rem; }
+.result-row b { color: var(--success); }
+.empty-state { color: var(--muted); padding: 1rem 0; }
+.guest-panel { margin: 3rem auto 0; max-width: 700px; }
+.guest-panel h2 { margin: 0 0 0.75rem; font-size: clamp(1.7rem, 3vw, 2.5rem); }
+.hidden { display: none !important; }
+.stat-card { border-top: 3px solid var(--accent); }
+.stat-card:hover, .exam-card:hover { transform: translateY(-3px); box-shadow: 0 22px 44px rgba(29, 36, 51, 0.12); }
+
+@media (max-width: 700px) {
+  .dashboard-header { align-items: flex-start; flex-direction: column; }
+  .stat-grid, .exam-grid { grid-template-columns: 1fr; }
+  .dashboard { padding-top: 2rem; }
+}

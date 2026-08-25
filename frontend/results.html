@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Results | SmartExam</title>
+    <link rel="stylesheet" href="./css/global.css" />
+    <link rel="stylesheet" href="./css/dashboard.css" />
+    <link rel="stylesheet" href="./css/results.css" />
+  </head>
+  <body>
+    <header class="topbar"><div class="container nav"><a class="brand" href="/">SmartExam</a><nav><a href="/">Dashboard</a><button class="nav-button" type="button" data-logout>Logout</button></nav></div></header>
+    <main class="dashboard container">
+      <section class="dashboard-header"><div><p class="eyebrow">Performance history</p><h1>Your results</h1><p class="dashboard-subtitle">Review every submitted assessment and your progress over time.</p></div></section>
+      <p class="dashboard-status" data-results-status aria-live="polite"></p>
+      <section class="results-list results-page-list" data-results-list></section>
+    </main>
+    <script src="./js/results.js"></script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | SmartExam</title>
+    <link rel="stylesheet" href="./css/global.css" />
+    <link rel="stylesheet" href="./css/auth.css" />
+  </head>
+  <body class="auth-page">
+    <main class="auth-shell">
+      <section class="auth-card">
+        <p class="eyebrow">Welcome back</p>
+        <h1>Login to SmartExam</h1>
+        <form class="auth-form" id="loginForm">
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" placeholder="name@example.com" required />
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" placeholder="Enter your password" required />
+          </label>
+          <p class="form-status" data-form-status aria-live="polite"></p>
+          <button type="submit" class="btn primary full-width">Login</button>
+        </form>
+        <p class="switch-text">Need an account? <a href="/register.html">Register here</a></p>
+      </section>
+    </main>
+    <script src="./js/auth.js"></script>
+  </body>
+</html>

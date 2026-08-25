@@ -1,0 +1,15 @@
+.exam-shell { padding: 3rem 0 5rem; max-width: 900px; }
+.exam-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.exam-heading h1 { margin: 0 0 0.5rem; font-size: clamp(2rem, 4vw, 3rem); }
+.exam-heading p { color: var(--muted); }
+.exam-timer { color: var(--danger); font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; background: #fff0f0; border-radius: 8px; padding: 0.5rem 0.75rem; }
+.question-list { display: grid; gap: 1rem; margin-top: 2rem; }
+.question { border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; background: var(--panel); box-shadow: 0 8px 24px rgba(29, 36, 51, 0.04); }
+.question legend { font-weight: 700; padding: 0 0.4rem; }
+.question label { display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem 0.5rem; color: var(--muted); cursor: pointer; }
+.question label:has(input:checked) { color: var(--primary); font-weight: 700; }
+.question label:hover { background: #f4f6ff; border-radius: 6px; }
+.result-panel { margin-top: 2rem; padding: 2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+.result-panel h2 { margin: 0 0 0.5rem; }
+.exam-action { margin-top: 1rem; padding: 0.65rem 1rem; font-size: 0.9rem; }
+@media (max-width: 700px) { .exam-heading { align-items: flex-start; flex-direction: column; } }
