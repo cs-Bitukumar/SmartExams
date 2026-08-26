@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const status = document.querySelector('[data-admin-status]');
   const logout = document.querySelector('[data-logout]');
   const examForm = document.querySelector('[data-exam-form]');
+  const questionSection = document.querySelector('[data-question-section]');
+  const questionForm = document.querySelector('[data-question-form]');
+  let createdExam;
 
   const getJson = async (url, options = {}) => {
     const response = await fetch(url, { credentials: 'include', ...options });
@@ -29,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelector('[data-exam-count]').textContent = `${examsData.exams.length} exams`;
     document.querySelector('[data-user-count]').textContent = `${usersData.users.length} students`;
     document.querySelector('[data-exam-list]').innerHTML = examsData.exams.length
-      ? examsData.exams.map((exam) => `<div class="admin-row"><div><strong>${exam.title}</strong><span>${exam.subject} · ${exam.duration} min</span></div><div class="row-actions"><b class="status-${exam.status}">${exam.status}</b><button class="text-button danger-button" type="button" data-delete-exam="${exam._id}">Delete</button></div></div>`).join('')
+      ? examsData.exams.map((exam) => `<div class="admin-row"><div><strong>${exam.title}</strong><span>${exam.subject} · ${exam.duration} min · ${exam.questionCount} questions</span></div><div class="row-actions"><b class="status-${exam.status}">${exam.status}</b><button class="text-button danger-button" type="button" data-delete-exam="${exam._id}">Delete</button></div></div>`).join('')
       : '<p class="empty-state">No exams created yet.</p>';
     document.querySelector('[data-user-list]').innerHTML = usersData.users.length
       ? usersData.users.map((user) => `<div class="admin-row"><div><strong>${user.name}</strong><span>${user.email}</span></div><div class="row-actions"><b class="${user.isActive ? 'active' : 'inactive'}">${user.isActive ? 'Active' : 'Inactive'}</b><button class="text-button" type="button" data-toggle-user="${user._id}" data-active="${user.isActive}">${user.isActive ? 'Disable' : 'Enable'}</button></div></div>`).join('')
@@ -44,12 +47,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     const button = examForm.querySelector('button');
     button.disabled = true;
     try {
-      await getJson('/api/exams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...Object.fromEntries(new FormData(examForm).entries()), instructions: [] }) });
-      window.location.reload();
+      const data = await getJson('/api/exams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...Object.fromEntries(new FormData(examForm).entries()), instructions: [] }) });
+      createdExam = data.exam;
+      questionSection.hidden = false;
+      document.querySelector('[data-question-exam-title]').textContent = `Add questions to ${createdExam.title}`;
+      status.textContent = 'Exam created. Add at least one question before publishing it to students.';
+      questionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       status.textContent = error.message;
-      button.disabled = false;
     }
+    button.disabled = false;
+  });
+
+  questionForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!createdExam) return;
+    const button = questionForm.querySelector('button[type="submit"]');
+    const formData = Object.fromEntries(new FormData(questionForm).entries());
+    button.disabled = true;
+    try {
+      await getJson(`/api/exams/${createdExam._id}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionText: formData.questionText,
+          options: [formData.option1, formData.option2, formData.option3, formData.option4],
+          correctAnswer: formData.correctAnswer,
+          marks: formData.marks,
+          negativeMarks: formData.negativeMarks,
+          explanation: formData.explanation,
+        }),
+      });
+      status.textContent = 'Question added. You can add another question.';
+      questionForm.reset();
+      questionForm.elements.marks.value = '1';
+      questionForm.elements.negativeMarks.value = '0';
+    } catch (error) {
+      status.textContent = error.message;
+    }
+    button.disabled = false;
+  });
+
+  document.querySelector('[data-finish-questions]').addEventListener('click', () => {
+    window.location.reload();
   });
 
   document.querySelector('[data-exam-list]').addEventListener('click', async (event) => {

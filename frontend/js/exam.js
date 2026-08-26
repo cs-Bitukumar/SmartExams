@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     attempt = startData.attempt;
     title.textContent = startData.exam.title;
     meta.textContent = `${startData.exam.subject} · ${startData.exam.duration} minutes · ${questionsData.questions.length} questions`;
-    list.innerHTML = questionsData.questions.map((question, index) => `<fieldset class="question"><legend>${index + 1}. ${question.questionText}</legend>${question.options.map((option, optionIndex) => `<label><input type="radio" name="${question._id}" value="${optionIndex}"><span>${option}</span></label>`).join('')}</fieldset>`).join('');
+    list.innerHTML = questionsData.questions.map((question, index) => `<fieldset class="question"><legend>${index + 1}. ${question.questionText}</legend><div class="options-grid">${question.options.map((option, optionIndex) => `<label><input type="radio" name="${question._id}" value="${optionIndex}"><span>${option}</span></label>`).join('')}</div></fieldset>`).join('');
     remainingSeconds = Math.max(0, Math.floor((new Date(attempt.startedAt).getTime() + startData.exam.duration * 60000 - Date.now()) / 1000));
     renderTimer();
     timerId = window.setInterval(() => { remainingSeconds -= 1; renderTimer(); if (remainingSeconds <= 0) finish(true); }, 1000);

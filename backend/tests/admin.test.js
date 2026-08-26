@@ -51,6 +51,12 @@ describe('Admin API', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.exam.title).toBe('Admin Test Exam');
+
+    const examsRes = await request(app)
+      .get('/api/exams')
+      .set('Cookie', [`token=${adminToken}`]);
+
+    expect(examsRes.body.data.exams[0].questionCount).toBe(0);
   });
 
   it('adds a question to the exam', async () => {
@@ -71,6 +77,12 @@ describe('Admin API', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.question.questionText).toBe('Admin Test Question 1');
+
+    const examsRes = await request(app)
+      .get('/api/exams')
+      .set('Cookie', [`token=${adminToken}`]);
+
+    expect(examsRes.body.data.exams[0].questionCount).toBe(1);
   });
 
   it('lists admin users and toggles user status safely', async () => {

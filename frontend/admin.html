@@ -37,6 +37,24 @@
           <button class="btn primary" type="submit">Create exam</button>
         </form>
       </section>
+      <section class="admin-form-section question-form-section" data-question-section hidden>
+        <div class="section-heading"><h2>Add questions</h2><span data-question-exam-title></span></div>
+        <form class="admin-form" data-question-form>
+          <label class="wide">Question<input name="questionText" required /></label>
+          <label>Option A<input name="option1" required /></label>
+          <label>Option B<input name="option2" required /></label>
+          <label>Option C<input name="option3" required /></label>
+          <label>Option D<input name="option4" required /></label>
+          <label>Correct option<select name="correctAnswer"><option value="0">Option A</option><option value="1">Option B</option><option value="2">Option C</option><option value="3">Option D</option></select></label>
+          <label>Marks<input type="number" name="marks" min="1" value="1" required /></label>
+          <label>Negative marks<input type="number" name="negativeMarks" min="0" step="0.01" value="0" required /></label>
+          <label class="wide">Explanation (optional)<textarea name="explanation" rows="2"></textarea></label>
+          <div class="question-actions">
+            <button class="btn primary" type="submit">Add question</button>
+            <button class="btn secondary" type="button" data-finish-questions>Done</button>
+          </div>
+        </form>
+      </section>
       <section class="dashboard-section"><div class="section-heading"><h2>Exams</h2><span data-exam-count>0 exams</span></div><div class="admin-table" data-exam-list></div></section>
       <section class="dashboard-section"><div class="section-heading"><h2>Students</h2><span data-user-count>0 students</span></div><div class="admin-table" data-user-list></div></section>
     </main>

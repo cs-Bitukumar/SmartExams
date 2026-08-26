@@ -31,6 +31,23 @@ describe('Authentication API', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.user.email).toBe('student@example.com');
+    expect(res.body.data.user.role).toBe('student');
+  });
+
+  it('does not allow signup to create an admin user', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        name: 'Attempted Admin',
+        email: 'student@example.com',
+        password: 'Password123',
+        confirmPassword: 'Password123',
+        role: 'admin',
+      });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.data.user.role).toBe('student');
+    await expect(User.findOne({ email: 'student@example.com' })).resolves.toMatchObject({ role: 'student' });
   });
 
   it('logs in an existing user', async () => {

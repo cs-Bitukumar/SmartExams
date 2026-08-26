@@ -1,5 +1,6 @@
 .admin-stats { grid-template-columns: repeat(4, 1fr); }
 .admin-form-section { margin-top: 2.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); }
+.question-form-section { border-color: var(--primary); }
 .admin-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1rem; }
 .admin-form label { display: grid; gap: 0.4rem; color: var(--muted); font-size: 0.85rem; font-weight: 700; }
 .admin-form input, .admin-form textarea, .admin-form select { width: 100%; padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
@@ -13,6 +14,7 @@
 .admin-row div { display: flex; flex-direction: column; gap: 0.25rem; }
 .admin-row span { color: var(--muted); font-size: 0.9rem; }
 .admin-row b { font-size: 0.8rem; text-transform: uppercase; }
+.question-actions { display: flex; align-items: center; gap: 1rem; grid-column: span 2; }
 .status-published, .active { color: var(--success); }
 .status-draft { color: var(--warning); }
 .status-closed, .inactive { color: var(--danger); }

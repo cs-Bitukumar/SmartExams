@@ -12,6 +12,10 @@
       <section class="auth-card">
         <p class="eyebrow">Welcome back</p>
         <h1>Login to SmartExam</h1>
+        <div class="role-toggle" aria-label="Choose login role">
+          <button type="button" class="role-option active" data-login-role="student" aria-pressed="true">User</button>
+          <button type="button" class="role-option" data-login-role="admin" aria-pressed="false">Admin</button>
+        </div>
         <form class="auth-form" id="loginForm">
           <label>
             <span>Email</span>
@@ -22,7 +26,7 @@
             <input type="password" name="password" placeholder="Enter your password" required />
           </label>
           <p class="form-status" data-form-status aria-live="polite"></p>
-          <button type="submit" class="btn primary full-width">Login</button>
+          <button type="submit" class="btn primary full-width" data-login-submit>Login as User</button>
         </form>
         <p class="switch-text">Need an account? <a href="/register.html">Register here</a></p>
       </section>

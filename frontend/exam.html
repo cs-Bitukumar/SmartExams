@@ -10,9 +10,10 @@
   <body>
     <header class="topbar"><div class="container nav"><a class="brand" href="/">SmartExam</a><div class="exam-timer" data-timer>--:--</div></div></header>
     <main class="exam-shell container">
-      <section class="exam-heading"><div><p class="eyebrow">Live assessment</p><h1 data-exam-title>Loading exam...</h1><p data-exam-meta></p></div><button class="btn primary" type="button" data-submit>Submit exam</button></section>
+      <section class="exam-heading"><div><p class="eyebrow">Live assessment</p><h1 data-exam-title>Loading exam...</h1><p data-exam-meta></p></div></section>
       <p class="dashboard-status" data-exam-status aria-live="polite"></p>
       <form class="question-list" data-question-list></form>
+      <div class="submit-area"><button class="btn primary" type="button" data-submit>Submit exam</button></div>
       <section class="result-panel" data-result hidden><p class="eyebrow">Assessment complete</p><h2 data-result-title>Result</h2><p data-result-summary></p><a class="btn primary" href="/">Back to dashboard</a></section>
     </main>
     <script src="./js/exam.js"></script>

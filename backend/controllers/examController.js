@@ -25,9 +25,13 @@ const getExams = async (req, res, next) => {
       : { status: 'published' };
 
     const exams = await Exam.find(filter).sort({ createdAt: -1 });
+    const examsWithQuestionCount = await Promise.all(exams.map(async (exam) => ({
+      ...exam.toObject(),
+      questionCount: await Question.countDocuments({ examId: exam._id }),
+    })));
     return res.status(200).json({
       success: true,
-      data: { exams },
+      data: { exams: examsWithQuestionCount },
     });
   } catch (error) {
     next(error);

@@ -4,12 +4,20 @@
 .exam-heading p { color: var(--muted); }
 .exam-timer { color: var(--danger); font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; background: #fff0f0; border-radius: 8px; padding: 0.5rem 0.75rem; }
 .question-list { display: grid; gap: 1rem; margin-top: 2rem; }
-.question { border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; background: var(--panel); box-shadow: 0 8px 24px rgba(29, 36, 51, 0.04); }
-.question legend { font-weight: 700; padding: 0 0.4rem; }
-.question label { display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem 0.5rem; color: var(--muted); cursor: pointer; }
+.question { min-width: 0; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; background: var(--panel); box-shadow: 0 8px 24px rgba(29, 36, 51, 0.04); }
+.question legend { display: block; width: 100%; max-width: 100%; margin: 0 0 0.75rem; padding: 0; font-weight: 700; overflow-wrap: anywhere; }
+.options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; margin-top: 0.75rem; }
+.question label { display: flex; min-width: 0; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.5rem; color: var(--muted); cursor: pointer; }
+.question label input { flex: 0 0 auto; margin-top: 0.25rem; }
+.question label span { min-width: 0; overflow-wrap: anywhere; }
 .question label:has(input:checked) { color: var(--primary); font-weight: 700; }
 .question label:hover { background: #f4f6ff; border-radius: 6px; }
 .result-panel { margin-top: 2rem; padding: 2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
 .result-panel h2 { margin: 0 0 0.5rem; }
+.submit-area { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
 .exam-action { margin-top: 1rem; padding: 0.65rem 1rem; font-size: 0.9rem; }
-@media (max-width: 700px) { .exam-heading { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 700px) {
+	.exam-heading { align-items: flex-start; flex-direction: column; }
+	.submit-area .btn { width: 100%; }
+	.options-grid { grid-template-columns: 1fr; }
+}
