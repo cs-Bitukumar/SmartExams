@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./assets/icons/icon1.png" />
+    <title>Exam | SmartExam</title>
+    <link rel="stylesheet" href="./css/global.css" />
+    <link rel="stylesheet" href="./css/dashboard.css" />
+    <link rel="stylesheet" href="./css/exam.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <a class="brand" href="/">SmartExam</a>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/results.html">My results</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="exam-shell container">
+      <section class="exam-heading">
+        <div>
+          <p class="eyebrow">Exam in progress</p>
+          <h1 data-exam-title>Loading exam...</h1>
+          <p data-exam-meta></p>
+        </div>
+        <span class="exam-timer" data-timer aria-live="polite">--:--</span>
+      </section>
+
+      <p class="dashboard-status" data-exam-status aria-live="polite"></p>
+
+      <form class="question-list" data-question-list></form>
+
+      <div class="submit-area">
+        <button class="btn primary" type="button" data-submit>Submit exam</button>
+      </div>
+
+      <section class="result-panel" data-result hidden>
+        <p class="eyebrow">Result</p>
+        <h2 data-result-title>Exam submitted</h2>
+        <p data-result-summary></p>
+        <a class="btn primary" href="/results.html">View all results</a>
+      </section>
+    </main>
+    <script src="./js/exam.js"></script>
+  </body>
+</html>

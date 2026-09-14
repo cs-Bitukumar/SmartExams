@@ -1,8 +1,15 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Exam = require('../models/Exam');
 const ExamAttempt = require('../models/ExamAttempt');
+const Question = require('../models/Question');
+const { getTimeTakenSeconds } = require('../services/attemptService');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const resultSortFields = new Set(['submittedAt', 'score', 'percentage', 'createdAt']);
+const resultSortField = (query) => (resultSortFields.has(String(query.sort)) ? String(query.sort) : 'submittedAt');
+const resultSortOrder = (query) => (String(query.order).toLowerCase() === 'asc' ? 1 : -1);
+
 const getPagination = (query) => {
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, Number.parseInt(query.limit, 10) || 25));
@@ -11,11 +18,12 @@ const getPagination = (query) => {
 
 const getAdminStats = async (req, res, next) => {
   try {
-    const [students, totalExams, publishedExams, totalAttempts, averageScore] = await Promise.all([
+    const [students, totalExams, publishedExams, totalAttempts, totalQuestions, averageScore] = await Promise.all([
       User.countDocuments({ role: 'student' }),
       Exam.countDocuments(),
       Exam.countDocuments({ status: 'published' }),
       ExamAttempt.countDocuments(),
+      Question.countDocuments(),
       ExamAttempt.aggregate([
         { $match: { status: { $in: ['submitted', 'auto-submitted'] } } },
         { $group: { _id: null, average: { $avg: '$percentage' } } },
@@ -119,8 +127,24 @@ const getResults = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
     const query = { status: { $in: ['submitted', 'auto-submitted'] } };
-    if (req.query.examId) query.examId = req.query.examId;
-    if (req.query.userId) query.userId = req.query.userId;
+    if (req.query.examId) {
+      if (!mongoose.isValidObjectId(req.query.examId)) {
+        return res.status(400).json({ success: false, message: 'Exam filter is invalid' });
+      }
+      query.examId = req.query.examId;
+    }
+    if (req.query.userId) {
+      if (!mongoose.isValidObjectId(req.query.userId)) {
+        return res.status(400).json({ success: false, message: 'User filter is invalid' });
+      }
+      query.userId = req.query.userId;
+    }
+    if (req.query.search) {
+      const term = String(req.query.search).trim().slice(0, 100);
+      const regex = new RegExp(escapeRegex(term), 'i');
+      const matchedUsers = await User.find({ $or: [{ name: regex }, { email: regex }] }).select('_id').limit(200).lean();
+      query.userId = { $in: matchedUsers.map((user) => user._id) };
+    }
     const [attempts, total] = await Promise.all([
       ExamAttempt.find(query)
       .populate('userId', 'name email')

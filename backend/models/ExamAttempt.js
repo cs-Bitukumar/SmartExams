@@ -13,6 +13,11 @@ const attemptQuestionSchema = new mongoose.Schema({
   explanation: { type: String, default: '' },
 }, { _id: false });
 
+const integrityEventSchema = new mongoose.Schema({
+  type: { type: String, required: true },
+  at: { type: Date, default: Date.now },
+}, { _id: false });
+
 const examAttemptSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -86,6 +91,15 @@ const examAttemptSchema = new mongoose.Schema({
   passed: {
     type: Boolean,
     default: false,
+  },
+  violations: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  integrityEvents: {
+    type: [integrityEventSchema],
+    default: [],
   },
 }, {
   timestamps: true,

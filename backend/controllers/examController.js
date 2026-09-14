@@ -56,6 +56,14 @@ const sanitizeExamPayload = (body, { partial = false } = {}) => {
   if (!partial || hasOwn(body, 'negativeMarking')) {
     payload.negativeMarking = parseBoolean(body.negativeMarking ?? false, 'Negative marking');
   }
+  if (!partial || hasOwn(body, 'attemptLimit')) {
+    const attemptLimit = validNumber(body.attemptLimit ?? 0, 'Attempt limit', { min: 0, required: true });
+    if (!Number.isInteger(attemptLimit)) throw Object.assign(new Error('Attempt limit must be a whole number'), { status: 400 });
+    payload.attemptLimit = attemptLimit;
+  }
+  if (!partial || hasOwn(body, 'shuffleQuestions')) {
+    payload.shuffleQuestions = parseBoolean(body.shuffleQuestions ?? false, 'Shuffle questions');
+  }
   if (!partial || hasOwn(body, 'instructions')) {
     if (body.instructions !== undefined && !Array.isArray(body.instructions)) {
       throw Object.assign(new Error('Instructions must be a list'), { status: 400 });

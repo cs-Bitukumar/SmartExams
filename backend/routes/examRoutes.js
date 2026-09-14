@@ -13,6 +13,7 @@ const {
 const { authenticateUser, requireAdmin, requireStudent } = require('../middleware/auth');
 const {
   getAttemptState,
+  reportViolation,
   saveAnswer,
   startAttempt,
   submitAttempt,
@@ -26,6 +27,7 @@ router.post('/:examId/start', authenticateUser, requireStudent, startAttempt);
 router.get('/attempts/:attemptId', authenticateUser, requireStudent, getAttemptState);
 router.put('/attempts/:attemptId/answers', authenticateUser, requireStudent, saveAnswer);
 router.post('/attempts/:attemptId/submit', authenticateUser, requireStudent, submitAttempt);
+router.post('/attempts/:attemptId/violations', authenticateUser, requireStudent, reportViolation);
 router.post('/', authenticateUser, requireAdmin, createExam);
 router.put('/:id', authenticateUser, requireAdmin, updateExam);
 router.delete('/:id', authenticateUser, requireAdmin, deleteExam);

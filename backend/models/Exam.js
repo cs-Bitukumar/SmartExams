@@ -43,6 +43,15 @@ const examSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  attemptLimit: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  shuffleQuestions: {
+    type: Boolean,
+    default: false,
+  },
   instructions: {
     type: [String],
     default: [],
