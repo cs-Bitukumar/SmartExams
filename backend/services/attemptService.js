@@ -16,6 +16,23 @@ const getExpiry = (attempt, exam) => {
 
 const isExpired = (attempt, exam, now = new Date()) => getExpiry(attempt, exam) <= now;
 
+const shuffleList = (items) => {
+  const list = [...items];
+  for (let index = list.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [list[index], list[swapIndex]] = [list[swapIndex], list[index]];
+  }
+  return list;
+};
+
+const getTimeTakenSeconds = (attempt) => {
+  if (!attempt || !attempt.startedAt) return 0;
+  const startedAt = new Date(attempt.startedAt).getTime();
+  const endedAt = attempt.submittedAt ? new Date(attempt.submittedAt).getTime() : Date.now();
+  const seconds = Math.round((endedAt - startedAt) / 1000);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+};
+
 const getAttemptQuestions = async (attempt, Question) => {
   if (Array.isArray(attempt.questionSnapshot) && attempt.questionSnapshot.length) {
     return attempt.questionSnapshot.map((question) => ({
@@ -113,6 +130,7 @@ const sanitizeAttemptForStudent = (attempt, { includeAnswers = false } = {}) => 
   const questions = data.questionSnapshot || [];
   data.questionCount = questions.length || undefined;
   delete data.questionSnapshot;
+  delete data.integrityEvents;
   if (!includeAnswers) {
     delete data.answers;
     delete data.markedForReview;
@@ -127,8 +145,10 @@ module.exports = {
   calculateResult,
   getAttemptQuestions,
   getExpiry,
+  getTimeTakenSeconds,
   isExpired,
   sanitizeAttemptForStudent,
+  shuffleList,
   toPlainAnswers,
   validateAnswerEntries,
 };

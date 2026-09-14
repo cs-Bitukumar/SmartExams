@@ -4,7 +4,7 @@ const Exam = require('../models/Exam');
 const ExamAttempt = require('../models/ExamAttempt');
 const Question = require('../models/Question');
 const { authenticateUser, requireStudent } = require('../middleware/auth');
-const { getAttemptQuestions, sanitizeAttemptForStudent } = require('../services/attemptService');
+const { getAttemptQuestions, getTimeTakenSeconds, sanitizeAttemptForStudent } = require('../services/attemptService');
 
 const router = express.Router();
 
@@ -112,17 +112,25 @@ router.get('/me/attempts/:id', authenticateUser, requireStudent, async (req, res
     const attemptData = sanitizeAttemptForStudent(attempt);
     const questions = await getAttemptQuestions(attempt, Question);
     const answers = attempt.answers instanceof Map ? attempt.answers : new Map(Object.entries(attempt.answers || {}));
+    const answeredCount = Number(attempt.correctAnswers || 0) + Number(attempt.incorrectAnswers || 0);
+    attemptData.timeTakenSeconds = getTimeTakenSeconds(attempt);
+    attemptData.accuracy = answeredCount ? (Number(attempt.correctAnswers || 0) / answeredCount) * 100 : 0;
     attemptData.review = questions.map((question) => {
       const answer = answers.get(question.questionId.toString());
+      const selectedAnswer = answer === undefined || answer === null || answer === '' ? null : Number(answer);
+      const outcome = selectedAnswer === null
+        ? 'skipped'
+        : (selectedAnswer === question.correctAnswer ? 'correct' : 'incorrect');
       return {
         questionId: question.questionId,
         questionText: question.questionText,
         options: question.options,
-        selectedAnswer: answer === undefined ? null : answer,
+        selectedAnswer,
         correctAnswer: question.correctAnswer,
         marks: question.marks,
         negativeMarks: question.negativeMarks,
         explanation: question.explanation,
+        outcome,
       };
     });
     return res.status(200).json({ success: true, data: { attempt: attemptData } });

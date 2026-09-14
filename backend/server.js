@@ -17,6 +17,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.disable('x-powered-by');
+// Render/most PaaS deployments sit behind a single reverse proxy. Trusting one hop
+// gives express-rate-limit the real client IP and lets secure cookies work correctly.
+app.set('trust proxy', 1);
 
 app.use(helmet({
   crossOriginResourcePolicy: false,
@@ -37,6 +40,7 @@ const generalLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   message: {
     success: false,
     message: 'Too many requests. Please try again later.',
