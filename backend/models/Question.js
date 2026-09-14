@@ -10,12 +10,16 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Question text is required'],
     trim: true,
+    maxlength: 5000,
   },
   options: {
     type: [String],
     validate: {
       validator: function validateOptions(v) {
-        return v.length >= 2 && v.length <= 6;
+        return Array.isArray(v)
+          && v.length >= 2
+          && v.length <= 6
+          && v.every((option) => typeof option === 'string' && option.trim().length > 0 && option.length <= 2000);
       },
       message: 'Each question must have between 2 and 6 options.',
     },
@@ -44,5 +48,7 @@ const questionSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 });
+
+questionSchema.index({ examId: 1, createdAt: 1 });
 
 module.exports = mongoose.model('Question', questionSchema);

@@ -16,6 +16,8 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.disable('x-powered-by');
+
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
@@ -61,16 +63,37 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
 });
 
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Resource not found' });
+});
+
 app.use((err, req, res, _next) => {
-  console.error('Unhandled error:', err);
-  res.status(err.status || 500).json({
+  console.error('Unhandled error:', err.message);
+  let status = err.status || 500;
+  let message = 'Something went wrong. Please try again.';
+  if (err.name === 'CastError') {
+    status = 400;
+    message = 'Invalid resource identifier';
+  } else if (err.name === 'ValidationError') {
+    status = 400;
+    message = Object.values(err.errors)[0]?.message || 'The submitted data is invalid';
+  } else if (err.code === 11000) {
+    status = 409;
+    message = 'A record with those details already exists';
+  } else if (status < 500 && err.message) {
+    message = err.message;
+  }
+  res.status(status).json({
     success: false,
-    message: err.message || 'Internal Server Error',
-    errors: process.env.NODE_ENV === 'production' ? [] : [err.message],
+    message,
+    errors: [],
   });
 });
 
 const startServer = async () => {
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET must be configured in production');
+  }
   await connectDB();
   app.listen(PORT, () => {
     console.log(`SmartExam server running on http://localhost:${PORT}`);

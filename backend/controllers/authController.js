@@ -1,11 +1,26 @@
 const jwt = require('jsonwebtoken');
+const validator = require('validator');
 const User = require('../models/User');
+
+const getJwtSecret = () => {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production') throw new Error('Server authentication is not configured');
+  return 'development-only-secret';
+};
 
 const generateToken = (userId) => jwt.sign(
   { id: userId },
-  process.env.JWT_SECRET || 'devsecret',
-  { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  getJwtSecret(),
+  { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
 );
+
+const passwordIsStrong = (password) => validator.isStrongPassword(password, {
+  minLength: 8,
+  minLowercase: 1,
+  minUppercase: 1,
+  minNumbers: 1,
+  minSymbols: 0,
+});
 
 const setAuthCookie = (res, token) => {
   res.cookie('token', token, {
@@ -20,17 +35,28 @@ const registerUser = async (req, res, next) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (![name, email, password, confirmPassword].every((value) => typeof value === 'string' && value.trim())) {
       return res.status(400).json({
         success: false,
         message: 'Name, email, password, and confirm password are required',
       });
     }
 
-    if (password.length < 6) {
+    if (!validator.isEmail(email.trim())) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long',
+        message: 'Enter a valid email address',
+      });
+    }
+
+    if (name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({ success: false, message: 'Full name must be between 2 and 100 characters' });
+    }
+
+    if (!passwordIsStrong(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
       });
     }
 
@@ -41,7 +67,8 @@ const registerUser = async (req, res, next) => {
       });
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = validator.normalizeEmail(email.trim()) || email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -50,8 +77,8 @@ const registerUser = async (req, res, next) => {
     }
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password,
       role: 'student',
     });
@@ -72,6 +99,9 @@ const registerUser = async (req, res, next) => {
       },
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'An account already exists for this email address' });
+    }
     next(error);
   }
 };
@@ -80,14 +110,19 @@ const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return res.status(400).json({
         success: false,
         message: 'Email and password are required',
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!validator.isEmail(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Enter a valid email address' });
+    }
+
+    const normalizedEmail = validator.normalizeEmail(email.trim()) || email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -125,7 +160,11 @@ const loginUser = async (req, res, next) => {
 };
 
 const logoutUser = (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
   return res.status(200).json({
     success: true,
     message: 'Logged out successfully',

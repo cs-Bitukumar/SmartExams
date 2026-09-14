@@ -5,16 +5,19 @@ const examSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Exam title is required'],
     trim: true,
+    maxlength: 160,
   },
   description: {
     type: String,
     required: [true, 'Exam description is required'],
     trim: true,
+    maxlength: 5000,
   },
   subject: {
     type: String,
     required: [true, 'Subject is required'],
     trim: true,
+    maxlength: 120,
   },
   duration: {
     type: Number,
@@ -59,5 +62,7 @@ const examSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 });
+
+examSchema.index({ status: 1, startDate: 1, endDate: 1 });
 
 module.exports = mongoose.model('Exam', examSchema);
