@@ -3,7 +3,7 @@
 .exam-heading h1 { margin: 0 0 0.5rem; font-size: clamp(2rem, 4vw, 3rem); }
 .exam-heading p { color: var(--muted); }
 .exam-timer { color: var(--danger); font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; background: #fff0f0; border-radius: 8px; padding: 0.5rem 0.75rem; }
-.question-list { display: grid; gap: 0rem; margin-top: 2rem; }
+.question-list { display: grid; gap: 0rem; margin-top: 0rem; }
 .question { min-width: 0; border: 1px solid var(--border); border-radius: 10px; padding: 0; background: var(--panel); box-shadow: 0 8px 24px rgba(29, 36, 51, 0.04); overflow: hidden; }
 .question legend { display: block; width: auto; max-width: none; margin:0; padding: 3rem 1.25rem 0.8rem; font-weight: 700; line-height: 1.45; overflow-wrap: anywhere; }
 .options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; margin: 0; padding: 0rem 1.25rem 0.5rem; }

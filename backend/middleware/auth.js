@@ -3,7 +3,9 @@ const User = require('../models/User');
 
 const authenticateUser = async (req, res, next) => {
   try {
-    const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
+    const authorization = req.headers.authorization;
+    const bearerToken = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+    const token = req.cookies?.token || bearerToken;
 
     if (!token) {
       return res.status(401).json({
@@ -12,7 +14,9 @@ const authenticateUser = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'devsecret');
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'development-only-secret');
+    if (!secret) throw new Error('Server authentication is not configured');
+    const decoded = jwt.verify(token, secret);
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user || !user.isActive) {
