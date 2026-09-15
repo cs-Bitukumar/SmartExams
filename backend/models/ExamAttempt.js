@@ -11,6 +11,9 @@ const attemptQuestionSchema = new mongoose.Schema({
   marks: { type: Number, required: true },
   negativeMarks: { type: Number, default: 0 },
   explanation: { type: String, default: '' },
+  // Persisted per-attempt option shuffle. Stores the display order as indexes
+  // into the frozen options array so a refresh never reshuffles an attempt.
+  optionOrder: { type: [Number], default: undefined },
 }, { _id: false });
 
 const integrityEventSchema = new mongoose.Schema({
@@ -63,6 +66,28 @@ const examAttemptSchema = new mongoose.Schema({
     type: String,
     enum: ['in-progress', 'submitted', 'auto-submitted'],
     default: 'in-progress',
+  },
+  // Manual result workflow: when the exam requires admin review, a submitted
+  // attempt stays in "pending-review" (score hidden from the student) until
+  // an admin publishes it. Older attempts without this field are treated as
+  // "published" so existing results keep working.
+  resultStatus: {
+    type: String,
+    enum: ['published', 'pending-review'],
+    default: 'published',
+  },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  reviewedAt: {
+    type: Date,
+    default: null,
+  },
+  adminFeedback: {
+    type: String,
+    default: '',
   },
   score: {
     type: Number,

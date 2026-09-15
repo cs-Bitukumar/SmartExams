@@ -18,4 +18,10 @@
 .status-published, .active { color: var(--success); }
 .status-draft { color: var(--warning); }
 .status-closed, .inactive { color: var(--danger); }
+.review-answer-list { margin: 1rem 0 0; padding-left: 0; list-style: none; display: grid; gap: 0.5rem; max-height: 320px; overflow-y: auto; }
+.review-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+.review-row-main { display: grid; gap: 0.25rem; min-width: 0; }
+.review-row-main span { color: var(--muted); font-size: 0.85rem; }
+.review-field { display: grid; gap: 0.4rem; margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; font-weight: 700; }
+.review-field input, .review-field textarea { width: 100%; padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; font: inherit; font-weight: 400; }
 @media (max-width: 700px) { .admin-stats, .admin-form { grid-template-columns: repeat(2, 1fr); } .admin-form .wide { grid-column: span 2; } }

@@ -43,12 +43,22 @@ const examSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  // When true, a student's score stays hidden after submit until an admin
+  // reviews and publishes the attempt (manual result workflow).
+  requireAdminReview: {
+    type: Boolean,
+    default: false,
+  },
   attemptLimit: {
     type: Number,
     default: 0,
     min: 0,
   },
   shuffleQuestions: {
+    type: Boolean,
+    default: false,
+  },
+  shuffleOptions: {
     type: Boolean,
     default: false,
   },

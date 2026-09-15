@@ -69,6 +69,45 @@
   font-size: 1rem;
 }
 
+.password-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-wrap input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: var(--primary);
+  background: rgba(49, 86, 216, 0.08);
+}
+
+.password-toggle.is-visible {
+  color: var(--primary);
+}
+
+.password-toggle svg {
+  pointer-events: none;
+}
+
 .auth-form input:hover { border-color: #b9c2d4; }
 
 .auth-form input:focus {

@@ -22,3 +22,4 @@
 .review-incorrect { color: var(--danger); font-weight: 700; }
 .review-explanation { border-top: 1px solid var(--border); padding-top: 0.5rem; }
 @media (max-width: 600px) { .result-card { align-items: flex-start; flex-direction: column; } .result-score { align-items: flex-start; } }
+.result-pending-link { color: var(--warning); font-weight: 700; }

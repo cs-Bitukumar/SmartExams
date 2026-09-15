@@ -1,22 +1,34 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  const SE = window.SE || {};
   const id = new URLSearchParams(window.location.search).get('id');
   const title = document.querySelector('[data-title]');
   const metrics = document.querySelector('[data-metrics]');
   const reviewSection = document.querySelector('[data-review-section]');
   const review = document.querySelector('[data-review]');
 
-  const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+  const escapeHtml = SE.escapeHtml || ((value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     "'": '&#39;',
     '"': '&quot;',
-  })[character]);
-  try {
-    const response = await fetch(`/api/users/me/attempts/${id}`, { credentials: 'include' });
+  })[character]));
+
+  const getJson = async (url) => {
+    if (SE.apiData) return SE.apiData(url);
+    const response = await fetch(url, { credentials: 'include' });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.message);
-    const attempt = result.data.attempt;
+    return result.data;
+  };
+  try {
+    const data = await getJson(`/api/users/me/attempts/${encodeURIComponent(id)}`);
+    const attempt = data.attempt;
+    if (attempt.underReview || attempt.resultStatus === 'pending-review') {
+      title.textContent = attempt.examId?.title || 'Exam result';
+      metrics.innerHTML = '<strong class="result-highlight">Result under review</strong><span>Your answer sheet has been submitted.</span><span>The admin will check it and declare your result soon.</span>';
+      return;
+    }
     title.textContent = attempt.examId?.title || 'Exam result';
     metrics.innerHTML = `<strong class="result-highlight">${attempt.passed ? 'Passed' : 'Not passed'}</strong><span>Score: ${attempt.score}/${attempt.totalMarks}</span><span>Percentage: ${Math.round(attempt.percentage)}%</span><span>Correct: ${attempt.correctAnswers}</span><span>Incorrect: ${attempt.incorrectAnswers}</span><span>Unanswered: ${attempt.unanswered}</span>`;
     if (attempt.review?.length) {

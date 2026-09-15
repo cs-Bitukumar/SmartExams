@@ -23,6 +23,7 @@ const globals = {
     matchMedia: 'readonly',
     Event: 'readonly',
     CustomEvent: 'readonly',
+    CSS: 'readonly',
     HTMLElement: 'readonly',
     Node: 'readonly',
   },

@@ -15,6 +15,8 @@
 .result-panel { margin-top: 2rem; padding: 2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
 .result-panel h2 { margin: 0 0 0.5rem; }
 .submit-area { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+.question-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.25rem 1.25rem 1.25rem; }
+.question-actions .text-button { padding: 0.35rem 0.75rem; }
 .exam-action { margin-top: 1rem; padding: 0.65rem 1rem; font-size: 0.9rem; }
 @media (max-width: 700px) {
 	.exam-heading { align-items: flex-start; flex-direction: column; }

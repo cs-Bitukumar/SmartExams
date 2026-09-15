@@ -14,7 +14,9 @@ beforeAll(async () => {
 
   await User.deleteMany({ email: { $in: ['admin@example.com', 'student@example.com'] } });
   await Exam.deleteMany({ title: 'Admin Test Exam' });
+  await Exam.deleteMany({ title: 'Admin Draft Exam' });
   await Question.deleteMany({ questionText: /Admin Test/i });
+  await Question.deleteMany({ questionText: /Admin Draft/i });
 
   await User.create({
     name: 'Admin User',
@@ -85,6 +87,82 @@ describe('Admin API', () => {
     expect(examsRes.body.data.exams[0].questionCount).toBe(1);
   });
 
+  it('lets admins edit a draft and publish it only with questions', async () => {
+    const createRes = await request(app)
+      .post('/api/exams')
+      .set('Cookie', [`token=${adminToken}`])
+      .send({
+        title: 'Admin Draft Exam',
+        description: 'Draft edit and publish flow',
+        subject: 'Science',
+        duration: 20,
+        totalMarks: 5,
+        passingMarks: 2,
+        instructions: [],
+        status: 'draft',
+      });
+    expect(createRes.statusCode).toBe(201);
+    expect(createRes.body.data.exam.status).toBe('draft');
+    const examId = createRes.body.data.exam._id;
+
+    // Drafts stay hidden from students but are visible to the admin list.
+    const adminListRes = await request(app).get('/api/exams').set('Cookie', [`token=${adminToken}`]);
+    const draft = adminListRes.body.data.exams.find((exam) => exam._id === examId);
+    expect(draft).toBeDefined();
+    expect(draft.status).toBe('draft');
+
+    // Publishing without questions is blocked so students never see an empty paper.
+    const blockedRes = await request(app)
+      .post(`/api/exams/${examId}/publish`)
+      .set('Cookie', [`token=${adminToken}`]);
+    expect(blockedRes.statusCode).toBe(409);
+    expect(blockedRes.body.success).toBe(false);
+
+    // Admin can edit the draft while it stays unpublished.
+    const updateRes = await request(app)
+      .put(`/api/exams/${examId}`)
+      .set('Cookie', [`token=${adminToken}`])
+      .send({ title: 'Admin Draft Exam', description: 'Updated draft description', duration: 25 });
+    expect(updateRes.statusCode).toBe(200);
+    expect(updateRes.body.success).toBe(true);
+    expect(updateRes.body.data.exam.duration).toBe(25);
+    expect(updateRes.body.data.exam.description).toBe('Updated draft description');
+    expect(updateRes.body.data.exam.status).toBe('draft');
+
+    // After adding a question the publish succeeds.
+    const questionRes = await request(app)
+      .post(`/api/exams/${examId}/questions`)
+      .set('Cookie', [`token=${adminToken}`])
+      .send({
+        questionText: 'Admin Draft Question 1',
+        options: ['A', 'B', 'C', 'D'],
+        correctAnswer: 0,
+        marks: 5,
+      });
+    expect(questionRes.statusCode).toBe(201);
+
+    const publishRes = await request(app)
+      .post(`/api/exams/${examId}/publish`)
+      .set('Cookie', [`token=${adminToken}`]);
+    expect(publishRes.statusCode).toBe(200);
+    expect(publishRes.body.success).toBe(true);
+    expect(publishRes.body.data.exam.status).toBe('published');
+
+    // Publishing again is rejected.
+    const repeatRes = await request(app)
+      .post(`/api/exams/${examId}/publish`)
+      .set('Cookie', [`token=${adminToken}`]);
+    expect(repeatRes.statusCode).toBe(409);
+
+    // Unpublish moves the exam back to draft.
+    const unpublishRes = await request(app)
+      .put(`/api/exams/${examId}`)
+      .set('Cookie', [`token=${adminToken}`])
+      .send({ status: 'draft' });
+    expect(unpublishRes.statusCode).toBe(200);
+    expect(unpublishRes.body.data.exam.status).toBe('draft');
+  });
+
   it('lists admin users and toggles user status safely', async () => {
     const student = await User.create({
       name: 'Student User',
@@ -114,6 +192,8 @@ describe('Admin API', () => {
 afterAll(async () => {
   await User.deleteMany({ email: { $in: ['admin@example.com', 'student@example.com'] } });
   await Exam.deleteMany({ title: 'Admin Test Exam' });
+  await Exam.deleteMany({ title: 'Admin Draft Exam' });
   await Question.deleteMany({ questionText: /Admin Test/i });
+  await Question.deleteMany({ questionText: /Admin Draft/i });
   await mongoose.connection.close();
 });
