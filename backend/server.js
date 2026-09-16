@@ -26,7 +26,15 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const configured = (process.env.CLIENT_URL || 'http://localhost:3000')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (configured.includes(origin)) return callback(null, true);
+    return callback(null, false);
+  },
   credentials: true,
 }));
 
@@ -35,18 +43,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+// The general limit deliberately excludes static HTML/CSS/JS so that assets
+// cannot consume the request budget, and students behind shared campus IPs get
+// a realistic budget for autosave + periodic server-time resync during exams.
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: (req) => process.env.NODE_ENV === 'test' || req.method === 'GET' || req.path.startsWith('/api/health'),
   message: {
     success: false,
     message: 'Too many requests. Please try again later.',
   },
 });
-app.use(generalLimiter);
+app.use('/api', generalLimiter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -72,7 +83,7 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, _next) => {
-  console.error('Unhandled error:', err.message);
+  console.error('Unhandled error:', req.method, req.originalUrl, err.message);
   let status = err.status || 500;
   let message = 'Something went wrong. Please try again.';
   if (err.name === 'CastError') {
@@ -84,6 +95,12 @@ app.use((err, req, res, _next) => {
   } else if (err.code === 11000) {
     status = 409;
     message = 'A record with those details already exists';
+  } else if (err.type === 'entity.parse.failed') {
+    status = 400;
+    message = 'The request body is not valid JSON';
+  } else if (err.type === 'entity.too.large') {
+    status = 413;
+    message = 'The request body is too large';
   } else if (status < 500 && err.message) {
     message = err.message;
   }

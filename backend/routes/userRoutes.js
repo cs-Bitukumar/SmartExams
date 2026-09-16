@@ -9,6 +9,11 @@ const { getAttemptQuestions, getTimeTakenSeconds, sanitizeAttemptForStudent } = 
 const router = express.Router();
 
 const completedStatuses = ['submitted', 'auto-submitted'];
+// Results under admin review stay hidden everywhere for students: the
+// resultStatus field may be missing on old records, so "published" includes
+// both 'published' and missing values.
+const publishedResultFilter = { $or: [{ resultStatus: 'published' }, { resultStatus: { $exists: false } }] };
+const publishedMatch = (base) => ({ ...base, ...publishedResultFilter });
 
 router.get('/me', authenticateUser, async (req, res) => {
   const user = await User.findById(req.user._id).select('-password');
@@ -25,11 +30,16 @@ router.get('/me/dashboard', authenticateUser, requireStudent, async (req, res, n
         { $or: [{ endDate: null }, { endDate: { $gte: now } }] },
       ],
     };
-    const [availableExams, completedAttempts, inProgressAttempts, analytics] = await Promise.all([
+    const [availableExams, completedAttempts, pendingAttempts, inProgressAttempts, analytics] = await Promise.all([
       Exam.find(availabilityFilter).sort({ createdAt: -1 }).lean(),
-      ExamAttempt.find({ userId: req.user._id, status: { $in: completedStatuses } })
+      ExamAttempt.find(publishedMatch({ userId: req.user._id, status: { $in: completedStatuses } }))
         .populate('examId', 'title subject duration totalMarks passingMarks status')
         .select('-answers -questionSnapshot')
+        .sort({ submittedAt: -1 })
+        .lean(),
+      ExamAttempt.find({ userId: req.user._id, status: { $in: completedStatuses }, resultStatus: 'pending-review' })
+        .populate('examId', 'title subject duration')
+        .select('-answers -questionSnapshot -score -percentage -correctAnswers -incorrectAnswers -unanswered -passed')
         .sort({ submittedAt: -1 })
         .lean(),
       ExamAttempt.find({ userId: req.user._id, status: 'in-progress' })
@@ -38,7 +48,7 @@ router.get('/me/dashboard', authenticateUser, requireStudent, async (req, res, n
         .sort({ startedAt: -1 })
         .lean(),
       ExamAttempt.aggregate([
-        { $match: { userId: req.user._id, status: { $in: completedStatuses } } },
+        { $match: publishedMatch({ userId: req.user._id, status: { $in: completedStatuses } }) },
         {
           $group: {
             _id: null,
@@ -73,6 +83,7 @@ router.get('/me/dashboard', authenticateUser, requireStudent, async (req, res, n
           upcomingExams: [],
           completedExams: completedAttempts,
           recentResults: completedAttempts.slice(0, 5),
+          pendingResults: pendingAttempts,
           inProgressAttempts: safeInProgress,
           totalExamsAttempted: completedAttempts.length,
           averageScore: Number(stats.averageScore || 0),
@@ -92,9 +103,19 @@ router.get('/me/attempts', authenticateUser, requireStudent, async (req, res, ne
     const attempts = await ExamAttempt.find({ userId: req.user._id })
       .populate('examId', 'title subject duration')
       .select('-answers -questionSnapshot')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return res.status(200).json({ success: true, data: { attempts } });
+    // Never leak scores of attempts waiting for admin review.
+    const safe = attempts.map((attempt) => {
+      if (attempt.resultStatus === 'pending-review') {
+        const { score, percentage, correctAnswers, incorrectAnswers, unanswered, passed, ...rest } = attempt;
+        return rest;
+      }
+      return attempt;
+    });
+
+    return res.status(200).json({ success: true, data: { attempts: safe } });
   } catch (error) {
     next(error);
   }
@@ -103,10 +124,26 @@ router.get('/me/attempts', authenticateUser, requireStudent, async (req, res, ne
 router.get('/me/attempts/:id', authenticateUser, requireStudent, async (req, res, next) => {
   try {
     const attempt = await ExamAttempt.findOne({ _id: req.params.id, userId: req.user._id })
-      .populate('examId', 'title subject duration totalMarks passingMarks');
+      .populate('examId', 'title subject duration totalMarks passingMarks requireAdminReview');
     if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' });
     if (attempt.status === 'in-progress') {
       return res.status(409).json({ success: false, message: 'This exam is still in progress' });
+    }
+    if (attempt.resultStatus === 'pending-review') {
+      // Student sees "under review" state; score/review unlock after admin publishes.
+      return res.status(200).json({
+        success: true,
+        data: {
+          attempt: {
+            _id: attempt._id,
+            examId: attempt.examId,
+            status: attempt.status,
+            resultStatus: attempt.resultStatus,
+            submittedAt: attempt.submittedAt,
+            underReview: true,
+          },
+        },
+      });
     }
 
     const attemptData = sanitizeAttemptForStudent(attempt);
@@ -143,7 +180,7 @@ router.get('/me/attempts/:id', authenticateUser, requireStudent, async (req, res
 // No synthetic data: an empty history is reported as hasData: false.
 router.get('/me/analytics', authenticateUser, requireStudent, async (req, res, next) => {
   try {
-    const match = { userId: req.user._id, status: { $in: completedStatuses } };
+    const match = publishedMatch({ userId: req.user._id, status: { $in: completedStatuses } });
     const [summaryRows, subjectRows, history] = await Promise.all([
       ExamAttempt.aggregate([
         { $match: match },

@@ -45,9 +45,32 @@ const questionSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium',
+  },
+  type: {
+    type: String,
+    enum: ['mcq', 'true-false'],
+    default: 'mcq',
+  },
 }, {
   timestamps: true,
 });
+
+questionSchema.pre('validate', function () {
+  if (this.type === 'true-false') {
+    this.set('options', ['True', 'False']);
+  }
+});
+
+questionSchema.path('options').validate(function validateTrueFalse(v) {
+  if (this.type === 'true-false') {
+    return Array.isArray(v) && v.length === 2 && v[0] === 'True' && v[1] === 'False';
+  }
+  return true;
+}, 'True/false questions must use exactly the options True and False.');
 
 questionSchema.index({ examId: 1, createdAt: 1 });
 

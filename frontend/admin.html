@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="./css/global.css" />
     <link rel="stylesheet" href="./css/dashboard.css" />
     <link rel="stylesheet" href="./css/admin.css" />
+    <script src="./js/api.js" defer></script>
+    <script src="./js/ui.js" defer></script>
+    <script src="./js/admin.js" defer></script>
   </head>
   <body>
     <header class="topbar">
@@ -35,6 +38,7 @@
           <label>Total marks<input type="number" name="totalMarks" min="1" required /></label>
           <label>Passing marks<input type="number" name="passingMarks" min="0" required /></label>
           <label>Status<select name="status"><option value="draft">Draft</option><option value="published">Published</option></select></label>
+          <label class="wide">Result declaration<select name="requireAdminReview"><option value="false">Automatic — SmartExams checks answers and shows the result instantly</option><option value="true">Manual — I will review and declare the result</option></select></label>
           <button class="btn primary" type="submit">Create exam</button>
         </form>
       </section>
@@ -56,9 +60,9 @@
           </div>
         </form>
       </section>
+      <section class="dashboard-section" data-pending-section><div class="section-heading"><h2>Results awaiting review</h2><span data-pending-count>0 awaiting review</span></div><div class="admin-table" data-pending-list><p class="empty-state">Loading...</p></div></section>
       <section class="dashboard-section"><div class="section-heading"><h2>Exams</h2><span data-exam-count>0 exams</span></div><div class="admin-table" data-exam-list></div></section>
       <section class="dashboard-section"><div class="section-heading"><h2>Students</h2><span data-user-count>0 students</span></div><div class="admin-table" data-user-list></div></section>
     </main>
-    <script src="./js/admin.js"></script>
   </body>
 </html>

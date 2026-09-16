@@ -33,9 +33,10 @@ const isExamOpen = (exam, now = new Date()) => {
 const finalizeAttempt = async (attempt, exam, status = 'submitted') => {
   const questions = await getAttemptQuestions(attempt, Question);
   const result = calculateResult(attempt, exam, questions);
+  const resultStatus = exam.requireAdminReview ? 'pending-review' : 'published';
   return ExamAttempt.findOneAndUpdate(
     { _id: attempt._id, userId: attempt.userId, status: 'in-progress' },
-    { $set: { ...result, status, submittedAt: new Date() } },
+    { $set: { ...result, status, submittedAt: new Date(), resultStatus } },
     { returnDocument: 'after', runValidators: true },
   );
 };
@@ -44,6 +45,13 @@ const autoFinalizeIfExpired = async (attempt, exam) => {
   if (attempt.status !== 'in-progress' || !isExpired(attempt, exam)) return attempt;
   return (await finalizeAttempt(attempt, exam, 'auto-submitted')) || attempt;
 };
+
+const sanitizeQuestionsForStudent = (questions) => (Array.isArray(questions) ? questions : []).map((question) => {
+  const safeQuestion = { ...question };
+  delete safeQuestion.correctAnswer;
+  delete safeQuestion.explanation;
+  return safeQuestion;
+});
 
 const startAttempt = async (req, res, next) => {
   try {
@@ -60,11 +68,13 @@ const startAttempt = async (req, res, next) => {
     });
     if (existingAttempt && !isExpired(existingAttempt, exam, now)) {
       const used = await countUsedAttempts(req.user._id, exam._id);
+      const questions = sanitizeQuestionsForStudent(await getAttemptQuestions(existingAttempt, Question));
       return res.status(200).json({
         success: true,
         data: {
           attempt: sanitizeAttemptForStudent(existingAttempt, { includeAnswers: true }),
           exam,
+          questions,
           serverTime: now.toISOString(),
           timeRemainingSeconds: timeRemainingSeconds(existingAttempt, exam),
           attemptsUsed: used,
@@ -85,7 +95,7 @@ const startAttempt = async (req, res, next) => {
     }
 
     const questions = await Question.find({ examId: exam._id })
-      .select('questionText options correctAnswer marks negativeMarks explanation')
+      .select('questionText options correctAnswer marks negativeMarks explanation difficulty type')
       .sort({ createdAt: 1 })
       .lean();
     if (!questions.length) {
@@ -94,6 +104,13 @@ const startAttempt = async (req, res, next) => {
 
     const orderedQuestions = exam.shuffleQuestions ? shuffleList(questions) : questions;
     const expiresAt = new Date(now.getTime() + (exam.duration * 60 * 1000));
+    const withOptionOrder = orderedQuestions.map((question) => {
+      const rawOptions = Array.isArray(question.options) ? question.options : [];
+      const order = (exam.shuffleOptions && rawOptions.length > 2)
+        ? shuffleList(rawOptions.map((_, index) => index))
+        : rawOptions.map((_, index) => index);
+      return { question, order };
+    });
     const attempt = await ExamAttempt.create({
       userId: req.user._id,
       examId: exam._id,
@@ -101,7 +118,7 @@ const startAttempt = async (req, res, next) => {
       expiresAt,
       durationMinutes: exam.duration,
       totalMarks: orderedQuestions.reduce((sum, question) => sum + question.marks, 0) || exam.totalMarks,
-      questionSnapshot: orderedQuestions.map((question) => ({
+      questionSnapshot: withOptionOrder.map(({ question, order }) => ({
         questionId: question._id,
         questionText: question.questionText,
         options: question.options,
@@ -109,13 +126,18 @@ const startAttempt = async (req, res, next) => {
         marks: question.marks,
         negativeMarks: question.negativeMarks || 0,
         explanation: question.explanation || '',
+        difficulty: question.difficulty || 'medium',
+        type: question.type || 'mcq',
+        optionOrder: order,
       })),
     });
+    const freshQuestions = sanitizeQuestionsForStudent(await getAttemptQuestions(attempt, Question));
     return res.status(201).json({
       success: true,
       data: {
         attempt: sanitizeAttemptForStudent(attempt, { includeAnswers: true }),
         exam,
+        questions: freshQuestions,
         serverTime: now.toISOString(),
         timeRemainingSeconds: timeRemainingSeconds(attempt, exam),
         attemptsUsed,
@@ -146,13 +168,7 @@ const getAttemptState = async (req, res, next) => {
       autoSubmitted: wasInProgress && attempt.status === 'auto-submitted',
     };
     if (attempt.status === 'in-progress') {
-      const questions = await getAttemptQuestions(attempt, Question);
-      data.questions = questions.map((question) => {
-        const safeQuestion = { ...question };
-        delete safeQuestion.correctAnswer;
-        delete safeQuestion.explanation;
-        return safeQuestion;
-      });
+      data.questions = sanitizeQuestionsForStudent(await getAttemptQuestions(attempt, Question));
     }
     return res.status(200).json({ success: true, data });
   } catch (error) {
@@ -239,6 +255,7 @@ const submitAttempt = async (req, res, next) => {
     }
 
     const result = calculateResult(attempt, exam, questions);
+    const needsReview = Boolean(exam.requireAdminReview);
     const submitted = await ExamAttempt.findOneAndUpdate(
       { _id: attempt._id, userId: req.user._id, status: 'in-progress' },
       {
@@ -247,6 +264,7 @@ const submitAttempt = async (req, res, next) => {
           answers: toPlainAnswers(attempt.answers),
           status: expired ? 'auto-submitted' : 'submitted',
           submittedAt: new Date(),
+          resultStatus: needsReview ? 'pending-review' : 'published',
         },
       },
       { returnDocument: 'after', runValidators: true },
@@ -255,8 +273,10 @@ const submitAttempt = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: expired ? 'Time expired and the exam was submitted automatically' : 'Exam submitted successfully',
-      data: { attempt: sanitizeAttemptForStudent(submitted), autoSubmitted: expired },
+      message: needsReview
+        ? 'Exam submitted. Your result will appear after admin review.'
+        : (expired ? 'Time expired and the exam was submitted automatically' : 'Exam submitted successfully'),
+      data: { attempt: sanitizeAttemptForStudent(submitted), autoSubmitted: expired, pendingReview: needsReview },
     });
   } catch (error) {
     next(error);
@@ -265,6 +285,7 @@ const submitAttempt = async (req, res, next) => {
 
 // Lightweight browser-level integrity signal. The server still owns timing and scoring,
 // so these events are advisory only and are capped to avoid unbounded document growth.
+// Rate limited per attempt on the route to stop spam from a tampered client.
 const reportViolation = async (req, res, next) => {
   try {
     const attempt = await ExamAttempt.findOne({ _id: req.params.attemptId, userId: req.user._id });

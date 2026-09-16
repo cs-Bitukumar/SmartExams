@@ -1,4 +1,6 @@
 :root {
+  /* Shared "result under review" link style (dashboard + results pages). */
+  --pending-link: #b36b16;
   --bg: #f6f7fb;
   --panel: #ffffff;
   --primary: #3156d8;
@@ -390,3 +392,6 @@ nav a:hover { color: var(--primary); }
   .se-dialog-actions .btn { width: 100%; }
   .toast-container { left: 1rem; right: 1rem; bottom: 1rem; max-width: none; }
 }
+
+.result-pending-link { color: var(--pending-link); font-weight: 700; }
+

@@ -155,20 +155,24 @@ const getResults = async (req, res, next) => {
     const { page, limit, skip } = getPagination(req.query);
     const { query, error } = await buildResultsFilter(req);
     if (error) return res.status(400).json({ success: false, message: error });
-    const [attempts, total] = await Promise.all([
+    if (['published', 'pending-review'].includes(String(req.query.resultStatus))) {
+      query.resultStatus = String(req.query.resultStatus);
+    }
+    const [attempts, total, pendingCount] = await Promise.all([
       ExamAttempt.find(query)
       .populate('userId', 'name email')
-      .populate('examId', 'title subject')
+      .populate('examId', 'title subject requireAdminReview')
       .select('-answers -questionSnapshot')
       .sort({ [resultSortField(req.query)]: resultSortOrder(req.query) })
       .skip(skip)
       .limit(limit),
       ExamAttempt.countDocuments(query),
+      ExamAttempt.countDocuments({ ...query, resultStatus: 'pending-review' }),
     ]);
 
     return res.status(200).json({
       success: true,
-      data: { attempts, pagination: { page, limit, total, pages: Math.ceil(total / limit) } },
+      data: { attempts, pendingCount, pagination: { page, limit, total, pages: Math.ceil(total / limit) } },
     });
   } catch (error) {
     next(error);
@@ -277,11 +281,96 @@ const exportResults = async (req, res, next) => {
   }
 };
 
+// Admin checks a submitted exam and publishes the result. Optionally the
+// admin can override score/passing result and leave feedback for the student.
+const reviewAttempt = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid attempt identifier' });
+    }
+    const attempt = await ExamAttempt.findById(id).populate('examId', 'title subject totalMarks passingMarks');
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' });
+    if (attempt.status === 'in-progress') {
+      return res.status(409).json({ success: false, message: 'This exam is still in progress and cannot be reviewed yet' });
+    }
+
+    const { action, score, passed, feedback } = req.body || {};
+    if (!['publish', 'unpublish'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Action must be publish or unpublish' });
+    }
+
+    const update = {
+      reviewedBy: req.user._id,
+      reviewedAt: new Date(),
+      adminFeedback: typeof feedback === 'string' ? feedback.trim().slice(0, 2000) : (attempt.adminFeedback || ''),
+    };
+
+    if (action === 'publish') {
+      if (score !== undefined) {
+        const numericScore = Number(score);
+        if (!Number.isFinite(numericScore) || numericScore < 0) {
+          return res.status(400).json({ success: false, message: 'Score must be a valid number' });
+        }
+        attempt.score = Math.round(numericScore * 100) / 100;
+        const total = Number(attempt.totalMarks) || 0;
+        attempt.percentage = total ? Math.round((attempt.score / total) * 10000) / 100 : 0;
+      }
+      if (passed !== undefined) {
+        if (typeof passed !== 'boolean') {
+          return res.status(400).json({ success: false, message: 'Passed must be true or false' });
+        }
+        attempt.passed = passed;
+      } else if (score !== undefined) {
+        const examPassing = Number(attempt.examId?.passingMarks ?? 0);
+        attempt.passed = attempt.score >= examPassing;
+      }
+      update.resultStatus = 'published';
+    } else {
+      update.resultStatus = 'pending-review';
+    }
+
+    Object.assign(attempt, update);
+    await attempt.save();
+
+    return res.status(200).json({
+      success: true,
+      message: action === 'publish' ? 'Result published. The student can now see it.' : 'Result moved back to pending review.',
+      data: { attempt },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Single attempt detail for the admin review screen (includes answers + questions).
+const getAttemptDetail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid attempt identifier' });
+    }
+    const attempt = await ExamAttempt.findById(id)
+      .populate('userId', 'name email')
+      .populate('examId', 'title subject totalMarks passingMarks')
+      .lean();
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' });
+    const answers = attempt.answers instanceof Map
+      ? Object.fromEntries(attempt.answers)
+      : (attempt.answers || {});
+    return res.status(200).json({ success: true, data: { attempt: { ...attempt, answers } } });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   exportResults,
   getAdminStats,
+  getAttemptDetail,
   getResults,
   getStudentDetail,
   getUsers,
+  reviewAttempt,
   toggleUserStatus,
 };

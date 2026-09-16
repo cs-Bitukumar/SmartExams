@@ -24,11 +24,21 @@
           </label>
           <label>
             <span>Password</span>
-            <input type="password" name="password" placeholder="Create password" required />
+            <span class="password-wrap">
+              <input type="password" name="password" placeholder="Create password" required data-password-input />
+              <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </span>
           </label>
           <label>
             <span>Confirm password</span>
-            <input type="password" name="confirmPassword" placeholder="Re-enter password" required />
+            <span class="password-wrap">
+              <input type="password" name="confirmPassword" placeholder="Re-enter password" required data-password-input />
+              <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </span>
           </label>
           <p class="form-status" data-form-status aria-live="polite"></p>
           <button type="submit" class="btn primary full-width">Create account</button>
